@@ -719,18 +719,30 @@
         const num=String(C.whatsapp.numero||"").replace(/\D/g,"");
         if(!/^\d{10,15}$/.test(num)){rsvpError.textContent="Configure o número do WhatsApp no config.js.";return;}
         const nomeFesta=String(C.nome||"a aniversariante");
+        // Emojis criados por pontos de código Unicode completos, sem bytes soltos.
+        const festa = String.fromCodePoint(0x1F389); // 🎉
+        const coracao = String.fromCodePoint(0x2764, 0xFE0F); // ❤️
         let message;
         if(rsvpChoice==="yes"){
           const names=[...rsvpNames.querySelectorAll("input")].map(el=>el.value.trim().replace(/\s+/g," "));
-          message="\uD83C\uDF89 *CONFIRMAÇÃO DE PRESENÇA*\n\nOlá! Que alegria poder participar da festa de *"+nomeFesta+"*!\n\n"+
-            "*Vamos à festa!*\n*Quantidade de pessoas:* "+names.length+"\n\n"+
-            "*Nomes dos convidados:*\n"+names.map((n,i)=>(i+1)+". "+n).join("\n")+"\n\n"+
-            "Estamos muito felizes em celebrar esse momento especial com vocês! \u2764\uFE0F";
+          message=[
+            festa+" *CONFIRMAÇÃO DE PRESENÇA*", "",
+            "Olá! Que alegria poder participar da festa de *"+nomeFesta+"*!", "",
+            "*Vamos à festa!*", "*Quantidade de pessoas:* "+names.length, "",
+            "*Nomes dos convidados:*",
+            ...names.map((n,i)=>(i+1)+". "+n), "",
+            "Estamos muito felizes em celebrar esse momento especial com vocês!"
+          ].join("\n");
         }else{
-          message="\u2764\uFE0F *CONFIRMAÇÃO DE PRESENÇA*\n\nOlá! Muito obrigado pelo convite para a festa de *"+nomeFesta+"*.\n\n"+
-            "Infelizmente, *não poderemos comparecer*. Desejamos uma celebração linda, cheia de amor, alegria e momentos inesquecíveis!";
+          message=[
+            coracao+" *CONFIRMAÇÃO DE PRESENÇA*", "",
+            "Olá! Muito obrigado pelo convite para a festa de *"+nomeFesta+"*.", "",
+            "Infelizmente, *não poderemos comparecer*.",
+            "Desejamos uma celebração linda, cheia de amor, alegria e momentos inesquecíveis!"
+          ].join("\n");
         }
-        // encodeURIComponent codifica a mensagem Unicode como UTF-8 para a URL do WhatsApp.
+        // Se houver caracteres de substituição, evita enviá-los ao WhatsApp.
+        message=message.replace(/\uFFFD/g,"");
         const url="https://wa.me/"+num+"?text="+encodeURIComponent(message);
         // Abre o WhatsApp em outra aba, sem substituir o convite nem reiniciar a música.
         // Não usar fallback com location.href, pois isso fecha a experiência do convite.
