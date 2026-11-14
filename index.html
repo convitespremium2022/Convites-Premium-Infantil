@@ -722,18 +722,25 @@
         let message;
         if(rsvpChoice==="yes"){
           const names=[...rsvpNames.querySelectorAll("input")].map(el=>el.value.trim().replace(/\s+/g," "));
-          message="🎉 *Confirmação de presença* 🎉\n\nOlá! Que alegria poder participar da festa de *"+nomeFesta+"*! 💖\n\n"+
-            "✅ *Vamos à festa!*\n👥 *Quantidade de pessoas:* "+names.length+"\n\n"+
-            "📝 *Nomes dos convidados:*\n"+names.map((n,i)=>(i+1)+". "+n).join("\n")+"\n\n"+
-            "Estamos muito felizes em celebrar esse momento especial com vocês! 🥳";
+          message="\uD83C\uDF89 *Confirmação de presença* \uD83C\uDF89\n\nOlá! Que alegria poder participar da festa de *"+nomeFesta+"*! \uD83D\uDC96\n\n"+
+            "\u2705 *Vamos à festa!*\n\uD83D\uDC65 *Quantidade de pessoas:* "+names.length+"\n\n"+
+            "\uD83D\uDCDD *Nomes dos convidados:*\n"+names.map((n,i)=>(i+1)+". "+n).join("\n")+"\n\n"+
+            "Estamos muito felizes em celebrar esse momento especial com vocês! \uD83E\uDD73";
         }else{
-          message="💌 *Confirmação de presença*\n\nOlá! Muito obrigado pelo convite para a festa de *"+nomeFesta+"*. 💖\n\n"+
-            "Infelizmente, *não poderemos comparecer*. Desejamos uma celebração linda, cheia de amor, alegria e momentos inesquecíveis! ✨";
+          message="\uD83D\uDC8C *Confirmação de presença*\n\nOlá! Muito obrigado pelo convite para a festa de *"+nomeFesta+"*. \uD83D\uDC96\n\n"+
+            "Infelizmente, *não poderemos comparecer*. Desejamos uma celebração linda, cheia de amor, alegria e momentos inesquecíveis! \u2728";
         }
         // encodeURIComponent codifica a mensagem Unicode como UTF-8 para a URL do WhatsApp.
         const url="https://wa.me/"+num+"?text="+encodeURIComponent(message);
-        const opened=window.open(url,"_blank","noopener,noreferrer");
-        if(!opened) window.location.href=url;
+        // Abre o WhatsApp em outra aba, sem substituir o convite nem reiniciar a música.
+        // Não usar fallback com location.href, pois isso fecha a experiência do convite.
+        const whatsappLink=document.createElement("a");
+        whatsappLink.href=url;
+        whatsappLink.target="_blank";
+        whatsappLink.rel="noopener noreferrer";
+        document.body.appendChild(whatsappLink);
+        whatsappLink.click();
+        whatsappLink.remove();
       });
 
       // ---- BOTÕES DA TELA PRINCIPAL --------------------------------------
