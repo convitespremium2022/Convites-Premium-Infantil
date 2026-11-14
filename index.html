@@ -722,13 +722,13 @@
         let message;
         if(rsvpChoice==="yes"){
           const names=[...rsvpNames.querySelectorAll("input")].map(el=>el.value.trim().replace(/\s+/g," "));
-          message="\uD83C\uDF89 *Confirmação de presença* \uD83C\uDF89\n\nOlá! Que alegria poder participar da festa de *"+nomeFesta+"*! \uD83D\uDC96\n\n"+
-            "\u2705 *Vamos à festa!*\n\uD83D\uDC65 *Quantidade de pessoas:* "+names.length+"\n\n"+
-            "\uD83D\uDCDD *Nomes dos convidados:*\n"+names.map((n,i)=>(i+1)+". "+n).join("\n")+"\n\n"+
-            "Estamos muito felizes em celebrar esse momento especial com vocês! \uD83E\uDD73";
+          message="\uD83C\uDF89 *CONFIRMAÇÃO DE PRESENÇA*\n\nOlá! Que alegria poder participar da festa de *"+nomeFesta+"*!\n\n"+
+            "*Vamos à festa!*\n*Quantidade de pessoas:* "+names.length+"\n\n"+
+            "*Nomes dos convidados:*\n"+names.map((n,i)=>(i+1)+". "+n).join("\n")+"\n\n"+
+            "Estamos muito felizes em celebrar esse momento especial com vocês! \u2764\uFE0F";
         }else{
-          message="\uD83D\uDC8C *Confirmação de presença*\n\nOlá! Muito obrigado pelo convite para a festa de *"+nomeFesta+"*. \uD83D\uDC96\n\n"+
-            "Infelizmente, *não poderemos comparecer*. Desejamos uma celebração linda, cheia de amor, alegria e momentos inesquecíveis! \u2728";
+          message="\u2764\uFE0F *CONFIRMAÇÃO DE PRESENÇA*\n\nOlá! Muito obrigado pelo convite para a festa de *"+nomeFesta+"*.\n\n"+
+            "Infelizmente, *não poderemos comparecer*. Desejamos uma celebração linda, cheia de amor, alegria e momentos inesquecíveis!";
         }
         // encodeURIComponent codifica a mensagem Unicode como UTF-8 para a URL do WhatsApp.
         const url="https://wa.me/"+num+"?text="+encodeURIComponent(message);
