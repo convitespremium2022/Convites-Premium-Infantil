@@ -34,6 +34,9 @@ window.CONFIG = {
     mensagem: "Olá! Confirmo minha presença no aniversário da Ananda."
   },
 
+  // Quantidade máxima permitida no formulário de confirmação (1 a 30).
+  confirmacao: { maxPessoas: 10 },
+
   // ----- LOCALIZAÇÃO (BOTÃO MAPA) ----------------------------------------
   // Link completo do Google Maps. Abra o local no Maps, clique em "Compartilar"
   // -> "Copiar link" e cole aqui (mantenha as aspas).

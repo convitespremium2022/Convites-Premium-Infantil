@@ -107,6 +107,24 @@
     .editor-drag-handle button{cursor:pointer;flex:0 0 auto;padding:6px 9px!important;font-size:12px}
     .editor-panel.dragging{opacity:.96;box-shadow:0 16px 42px #0008}
     body.editor-on .editor-panel{display:block}.editor-panel b{font-size:14px}.editor-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}.editor-panel button,.editor-panel select,.editor-panel input{border:1px solid #d5a8b7;border-radius:10px;padding:8px;background:#fff;color:#4b2634;font-weight:700}.editor-panel input{width:74px}.editor-panel textarea{width:100%;height:78px;margin-top:8px;border:1px solid #d5a8b7;border-radius:10px;padding:8px;font-size:12px}.editor-mini{opacity:.75;font-size:12px;margin-top:6px}.edit-open{display:none;position:fixed;right:12px;bottom:12px;z-index:45;border:0;border-radius:999px;padding:10px 13px;background:rgba(255,255,255,.88);color:#6b3a21;font-weight:800;box-shadow:0 4px 16px #0004}body.can-edit .edit-open{display:block}body.editor-on .edit-open{display:none}
+
+    /* RSVP — janela independente das telas e do editor de hotspots */
+    .rsvp-overlay{position:fixed;inset:0;z-index:110;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(24,12,20,.75);backdrop-filter:blur(7px)}
+    .rsvp-overlay.open{display:flex}
+    .rsvp-dialog{position:relative;width:min(100%,440px);max-height:90dvh;overflow-y:auto;border-radius:24px;background:#fff9fb;color:#47283a;padding:26px 22px 22px;box-shadow:0 20px 65px #0008;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+    .rsvp-dialog h2{font-family:Georgia,serif;font-size:27px;text-align:center;margin:4px 32px 9px;color:#873b62}
+    .rsvp-dialog p{font-size:14px;text-align:center;line-height:1.5;margin:0 0 18px}
+    .rsvp-close{position:absolute;right:13px;top:12px;border:0;border-radius:50%;width:35px;height:35px;background:#f2e2e9;color:#573047;font-size:23px;cursor:pointer}
+    .rsvp-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+    .rsvp-choices button{padding:14px 7px;border:2px solid #dfc6d2;border-radius:13px;background:white;color:#6b3652;font-size:14px;font-weight:700;cursor:pointer}
+    .rsvp-choices button.selected{border-color:#a34474;background:#fbe8f0}
+    .rsvp-dialog label{display:block;font-size:14px;font-weight:700;margin:12px 0 5px}
+    .rsvp-dialog select,.rsvp-dialog input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #cdaab9;border-radius:11px;background:white;color:#3d2632;font-size:16px}
+    .rsvp-names{display:grid;gap:2px;margin-top:8px}
+    .rsvp-send{display:block;width:100%;margin-top:18px;padding:15px 12px;border:0;border-radius:13px;background:#8d365f;color:white;font-size:16px;font-weight:800;cursor:pointer}
+    .rsvp-send:disabled{background:#c6adb9;cursor:not-allowed}
+    .rsvp-error{color:#9b2442;font-size:13px;min-height:18px;margin-top:8px;text-align:center}
+    @media(max-width:350px){.rsvp-choices{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -172,6 +190,26 @@
     </section>
   </main>
   <div class="copy-toast" id="copyToast" role="status" aria-live="polite">Chave PIX copiada!</div>
+
+
+  <div class="rsvp-overlay" id="rsvpOverlay" role="presentation">
+    <div class="rsvp-dialog" role="dialog" aria-modal="true" aria-labelledby="rsvpTitle">
+      <button type="button" class="rsvp-close" id="rsvpClose" aria-label="Fechar">×</button>
+      <h2 id="rsvpTitle">Confirmação de presença</h2>
+      <p>Será uma alegria celebrar esse momento com você! Confirme sua participação abaixo.</p>
+      <div class="rsvp-choices" role="group" aria-label="Você irá à festa?">
+        <button type="button" id="rsvpYes" aria-pressed="false">Vou à festa</button>
+        <button type="button" id="rsvpNo" aria-pressed="false">Não vou</button>
+      </div>
+      <div id="rsvpGoing" hidden>
+        <label for="rsvpCount">Quantas pessoas irão, incluindo você?</label>
+        <select id="rsvpCount"><option value="">Selecione a quantidade</option></select>
+        <div class="rsvp-names" id="rsvpNames"></div>
+      </div>
+      <div class="rsvp-error" id="rsvpError" role="status" aria-live="polite"></div>
+      <button type="button" class="rsvp-send" id="rsvpSend" disabled>Confirmar pelo WhatsApp</button>
+    </div>
+  </div>
 
   <!-- Botão global: aparece também durante o vídeo quando o iPhone bloquear o MP3 -->
   <button class="music-unlock" id="musicUnlock" type="button">Ativar música</button>
@@ -617,14 +655,93 @@
         $("skipBtn").addEventListener("click", goMain);
       }
 
+
+      // RSVP: campos dinâmicos, validação e envio UTF-8 ao WhatsApp.
+      const rsvpOverlay = $("rsvpOverlay");
+      const rsvpCount = $("rsvpCount");
+      const rsvpNames = $("rsvpNames");
+      const rsvpSend = $("rsvpSend");
+      const rsvpError = $("rsvpError");
+      const rsvpYes = $("rsvpYes");
+      const rsvpNo = $("rsvpNo");
+      let rsvpChoice = "";
+      const maxGuests = Math.max(1, Math.min(30, Number(CFG.confirmacao?.maxPessoas) || 10));
+      for(let i=1;i<=maxGuests;i++){
+        const option = document.createElement("option"); option.value=String(i);
+        option.textContent=String(i) + (i===1 ? " pessoa" : " pessoas");
+        rsvpCount.appendChild(option);
+      }
+      function validateRsvp(){
+        const count = Number(rsvpCount.value);
+        const inputs = [...rsvpNames.querySelectorAll("input")];
+        const names = inputs.map(el=>el.value.trim().replace(/\s+/g," "));
+        const validNames = count>0 && inputs.length===count && names.every(n=>n.length>=2 && /\p{L}/u.test(n));
+        const unique = new Set(names.map(n=>n.toLocaleLowerCase("pt-BR"))).size===names.length;
+        rsvpSend.disabled = !(rsvpChoice==="no" || (rsvpChoice==="yes" && validNames && unique));
+        rsvpError.textContent = rsvpChoice==="yes" && validNames && !unique ? "Informe nomes diferentes para cada pessoa." : "";
+      }
+      function selectRsvp(choice){
+        rsvpChoice=choice;
+        rsvpYes.classList.toggle("selected",choice==="yes");
+        rsvpNo.classList.toggle("selected",choice==="no");
+        rsvpYes.setAttribute("aria-pressed",String(choice==="yes"));
+        rsvpNo.setAttribute("aria-pressed",String(choice==="no"));
+        $("rsvpGoing").hidden=choice!=="yes";
+        validateRsvp();
+      }
+      function openRsvp(){
+        rsvpChoice=""; rsvpCount.value=""; rsvpNames.replaceChildren();
+        rsvpError.textContent=""; selectRsvp("");
+        rsvpOverlay.classList.add("open"); document.body.style.overflow="hidden";
+        rsvpYes.focus();
+      }
+      function closeRsvp(){rsvpOverlay.classList.remove("open");document.body.style.overflow="";$("confirmBtn")?.focus();}
+      rsvpYes.addEventListener("click",()=>selectRsvp("yes"));
+      rsvpNo.addEventListener("click",()=>selectRsvp("no"));
+      $("rsvpClose").addEventListener("click",closeRsvp);
+      rsvpOverlay.addEventListener("click",e=>{if(e.target===rsvpOverlay)closeRsvp();});
+      document.addEventListener("keydown",e=>{if(e.key==="Escape"&&rsvpOverlay.classList.contains("open"))closeRsvp();});
+      rsvpCount.addEventListener("change",()=>{
+        const count=Number(rsvpCount.value);rsvpNames.replaceChildren();
+        for(let i=0;i<count;i++){
+          const label=document.createElement("label");label.htmlFor="rsvpName"+i;
+          label.textContent="Nome completo da pessoa " +(i+1);
+          const input=document.createElement("input");input.id="rsvpName"+i;
+          input.type="text";input.autocomplete="name";input.maxLength=90;
+          input.placeholder="Digite o nome";input.required=true;
+          input.addEventListener("input",validateRsvp);
+          rsvpNames.append(label,input);
+        }
+        validateRsvp();
+      });
+      rsvpSend.addEventListener("click",()=>{
+        validateRsvp();if(rsvpSend.disabled)return;
+        const num=String(C.whatsapp.numero||"").replace(/\D/g,"");
+        if(!/^\d{10,15}$/.test(num)){rsvpError.textContent="Configure o número do WhatsApp no config.js.";return;}
+        const nomeFesta=String(C.nome||"a aniversariante");
+        let message;
+        if(rsvpChoice==="yes"){
+          const names=[...rsvpNames.querySelectorAll("input")].map(el=>el.value.trim().replace(/\s+/g," "));
+          message="🎉 *Confirmação de presença* 🎉\n\nOlá! Que alegria poder participar da festa de *"+nomeFesta+"*! 💖\n\n"+
+            "✅ *Vamos à festa!*\n👥 *Quantidade de pessoas:* "+names.length+"\n\n"+
+            "📝 *Nomes dos convidados:*\n"+names.map((n,i)=>(i+1)+". "+n).join("\n")+"\n\n"+
+            "Estamos muito felizes em celebrar esse momento especial com vocês! 🥳";
+        }else{
+          message="💌 *Confirmação de presença*\n\nOlá! Muito obrigado pelo convite para a festa de *"+nomeFesta+"*. 💖\n\n"+
+            "Infelizmente, *não poderemos comparecer*. Desejamos uma celebração linda, cheia de amor, alegria e momentos inesquecíveis! ✨";
+        }
+        // encodeURIComponent codifica a mensagem Unicode como UTF-8 para a URL do WhatsApp.
+        const url="https://wa.me/"+num+"?text="+encodeURIComponent(message);
+        const opened=window.open(url,"_blank","noopener,noreferrer");
+        if(!opened) window.location.href=url;
+      });
+
       // ---- BOTÕES DA TELA PRINCIPAL --------------------------------------
       if(hasWhatsapp && $("confirmBtn")){
         $("confirmBtn").addEventListener("click", (e)=>{
           if(document.body.classList.contains("editor-on")) return;
           e.preventDefault(); e.stopPropagation();
-          const num = (C.whatsapp.numero || "").replace(/\D/g,"");
-          const msg = encodeURIComponent(C.whatsapp.mensagem || "");
-          window.open("https://wa.me/" + num + "?text=" + msg, "_blank");
+          openRsvp();
         });
       }
       if(hasMap && $("mapBtn")){
