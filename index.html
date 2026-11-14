@@ -719,14 +719,11 @@
         const num=String(C.whatsapp.numero||"").replace(/\D/g,"");
         if(!/^\d{10,15}$/.test(num)){rsvpError.textContent="Configure o número do WhatsApp no config.js.";return;}
         const nomeFesta=String(C.nome||"a aniversariante");
-        // Emojis criados por pontos de código Unicode completos, sem bytes soltos.
-        const festa = String.fromCodePoint(0x1F389); // 🎉
-        const coracao = String.fromCodePoint(0x2764, 0xFE0F); // ❤️
         let message;
         if(rsvpChoice==="yes"){
           const names=[...rsvpNames.querySelectorAll("input")].map(el=>el.value.trim().replace(/\s+/g," "));
           message=[
-            festa+" *CONFIRMAÇÃO DE PRESENÇA*", "",
+            "*CONFIRMAÇÃO DE PRESENÇA*", "",
             "Olá! Que alegria poder participar da festa de *"+nomeFesta+"*!", "",
             "*Vamos à festa!*", "*Quantidade de pessoas:* "+names.length, "",
             "*Nomes dos convidados:*",
@@ -735,7 +732,7 @@
           ].join("\n");
         }else{
           message=[
-            coracao+" *CONFIRMAÇÃO DE PRESENÇA*", "",
+            "*CONFIRMAÇÃO DE PRESENÇA*", "",
             "Olá! Muito obrigado pelo convite para a festa de *"+nomeFesta+"*.", "",
             "Infelizmente, *não poderemos comparecer*.",
             "Desejamos uma celebração linda, cheia de amor, alegria e momentos inesquecíveis!"
